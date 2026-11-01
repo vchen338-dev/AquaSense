@@ -13,7 +13,7 @@ This repository exists to **keep a safe, restorable copy of the AquaSense projec
 |------|--------|-------|
 | Mobile app (Flutter / Dart) | ✅ Included | `lib/`, `android/`, `assets/`, `pubspec.yaml` |
 | Hardware build + wiring notes | ✅ Documented below | [Hardware backup](#hardware-backup) |
-| ESP32 sketch (Arduino IDE) | ✅ Included — hardware test version | `firmware/ESP_Code.ino` |
+| ESP32 firmware (Arduino IDE sketch) | ✅ Included | `firmware/ESP_Code.ino` |
 
 ---
 
@@ -96,17 +96,33 @@ epoch,raw,level,temp,hum
 
 ## Firmware
 
-`firmware/ESP_Code.ino` is the hardware test sketch (Arduino IDE, ESP32 board library; libraries: `DHT`, `RTClib`, `LiquidCrystal_I2C`). It currently:
+`firmware/ESP_Code.ino` is the full ESP32 sketch (v4, Arduino IDE with the ESP32 board package). Libraries (Library Manager): `LiquidCrystal_I2C`, `RTClib`, `DHT sensor library` + `Adafruit Unified Sensor`. `WiFi`, `WebServer`, `LittleFS` and `Preferences` ship with the board package.
 
-- reads the DHT22 and shows temperature/humidity on the 16x2 I2C LCD (address `0x27`), alternating with the DS3231 date and time every 2 s;
-- switches the fan relay (GPIO 25) on at 40 °C and off below it;
-- runs a buzzer test (relay on GPIO 26, active-LOW): slow beeps, then fast beeps, repeating in a loop.
+What it does:
 
-It does **not** yet include the MQ-137 reading, Wi-Fi access point, the HTTP endpoints below, or record storage, which the app needs. Upload the full firmware to `firmware/` to complete the backup.
+- Reads the MQ-137 (averaged over 40 samples) and the DHT22 every 2 s, and shows live data on the 16x2 I2C LCD (address `0x27`, try `0x3F` if blank), rotating through 4 pages.
+- **Ghost-data protection:** an unplugged or floating MQ-137 is flagged as a sensor fault (noise, sudden-jump and DO-pin checks). Level changes must repeat on consecutive reads before an alarm is raised. Add a 10k resistor from GPIO 34 to GND so a pulled-out wire reads ~0.
+- **Levels:** `low` / `mid` / `high` from raw ADC thresholds (defaults 1200 / 2200), with a 60 s sensor warm-up.
+- **Buzzer:** high = rapid beep, sensor fault = 2 short beeps every 2 s, mid = slow beep.
+- **Fan:** auto (turns on at the set temperature, default 32 °C, off 2 °C lower) or forced on/off from the app.
+- **Wi-Fi AP** `AmmoniaMonitor` at `192.168.4.1` serving the [Device API](#device-api) below.
+- **Logging:** one reading every 30 minutes to `/log.csv` on flash (rotates at about 60 KB). Thresholds and fan mode are saved in flash and survive power loss.
+
+| Pin | Use |
+|-----|-----|
+| GPIO 34 / 27 | MQ-137 AO / DO |
+| GPIO 4 | DHT22 data |
+| GPIO 21 / 22 | I2C SDA / SCL (RTC + LCD) |
+| GPIO 25 | Fan relay (CH1) |
+| GPIO 26 | Buzzer relay (CH2) |
+
+Relay polarity is set by `RELAY_ACTIVE_LOW` (currently `false`).
+
+> ⚠️ The Wi-Fi password is hard-coded as `12345678` (`AP_PASS`). Change it for any real deployment.
 
 ## Device API
 
-The app calls these HTTP endpoints on the ESP32 (they are **not** implemented in `firmware/ESP_Code.ino` yet, see Firmware above):
+The app calls these HTTP endpoints on the ESP32 (implemented in `firmware/ESP_Code.ino`):
 
 | Endpoint | Purpose |
 |----------|---------|
