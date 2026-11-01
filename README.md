@@ -145,6 +145,12 @@ pubspec.yaml    Dependencies
 
 ## Team
 
-Concepcion, Jason Keith A. · Fariñas, Mark James M. · Galera, Venz Jochen B. · Co, Gie-Anne Carla S. · Espino, Josaine L. · Lozano, Joyce T. · Lamer, Rhea E.
+· Concepcion, Jason Keith A. 
+· Fariñas, Mark James M. 
+· Galera, Venz Jochen B. 
+· Co, Gie-Anne Carla S. 
+· Espino, Josaine L. 
+· Lozano, Joyce T. 
+· Lamer, Rhea E.
 
-Cagayan State University, College of Information and Computing Sciences
+Cagayan State University, College of Information and Computing Sciences, BS in Computer Science
